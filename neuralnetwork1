@@ -1,0 +1,65 @@
+import subprocess
+import sys
+
+# Função para instalar pacotes se não existirem
+def instalar_pacote(pacote):
+    try:
+        __import__(pacote)
+    except ImportError:
+        print(f"[!] Pacote '{pacote}' não encontrado. Instalando...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", pacote])
+        print(f"[+] Pacote '{pacote}' instalado com sucesso!")
+
+# Lista de pacotes necessários
+pacotes = ["tensorflow", "numpy", "matplotlib"]
+
+for p in pacotes:
+    instalar_pacote(p)
+
+# Importações depois de garantir instalação
+import tensorflow as tf
+from tensorflow import keras
+import numpy as np
+import matplotlib.pyplot as plt
+
+# =========================
+# Mini rede neural 2D melhorada
+# =========================
+
+# Criar dados simples (pontos 2D)
+x = np.random.rand(500, 2)
+y = (x[:,0] + x[:,1] > 1).astype(int)  # classe 1 se soma > 1
+
+# Definir modelo com mais neurónios
+model = keras.Sequential([
+    keras.layers.Dense(16, activation='relu', input_shape=(2,)),  # mais neurónios
+    keras.layers.Dense(16, activation='relu'),
+    keras.layers.Dense(1, activation='sigmoid')
+])
+
+# Compilar modelo
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+# Treinar modelo
+history = model.fit(x, y, epochs=100, verbose=1)
+
+# Avaliar modelo
+acc_final = history.history['accuracy'][-1]
+print(f"Acurácia final: {acc_final:.4f}")
+
+# =========================
+# Visualizar fronteira de decisão
+# =========================
+
+# Criar grelha fina
+xx, yy = np.meshgrid(np.linspace(0,1,300), np.linspace(0,1,300))
+grid = np.c_[xx.ravel(), yy.ravel()]
+
+# Obter previsões de classe (0 ou 1)
+preds_classes = (model.predict(grid) > 0.5).astype(int).reshape(xx.shape)
+
+# Plot
+plt.contourf(xx, yy, preds_classes, levels=[-0.1,0.5,1.1], alpha=0.3, cmap='coolwarm')
+plt.scatter(x[:,0], x[:,1], c=y, edgecolor='k', cmap='coolwarm')
+plt.title("Mini rede neural 2D melhorada")
+plt.show()
